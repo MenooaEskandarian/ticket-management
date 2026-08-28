@@ -20,6 +20,24 @@ class ConflictError(APIException):
         self.payload = payload or {}
 
 
+def _first_message(value) -> str:
+    """DRF wraps most messages in a list; the client wants one sentence."""
+    if isinstance(value, list):
+        return str(value[0]) if value else ""
+    if isinstance(value, dict):
+        return _first_message(next(iter(value.values()), ""))
+    return str(value)
+
+
+def _error_code(exc) -> str:
+    detail = getattr(exc, "detail", None)
+    if hasattr(detail, "code"):
+        return detail.code
+    if isinstance(detail, list) and detail and hasattr(detail[0], "code"):
+        return detail[0].code
+    return getattr(exc, "default_code", "error")
+
+
 def api_exception_handler(exc, context):
     """Give every error the same shape: a message, a code, and per-field detail."""
     response = drf_exception_handler(exc, context)
@@ -27,18 +45,19 @@ def api_exception_handler(exc, context):
         return None
 
     detail = response.data
-    body = {"code": getattr(exc, "default_code", "error")}
+    body = {"code": _error_code(exc)}
 
     if isinstance(detail, dict):
-        message = detail.get("detail")
-        if message is not None:
-            body["detail"] = str(message)
+        if "detail" in detail:
+            body["detail"] = _first_message(detail["detail"])
+            fields = {key: value for key, value in detail.items() if key != "detail"}
+            if fields:
+                body["fields"] = fields
         else:
-            body["detail"] = "The request could not be processed."
+            body["detail"] = _first_message(detail)
             body["fields"] = detail
     elif isinstance(detail, list):
-        body["detail"] = "The request could not be processed."
-        body["fields"] = {"non_field_errors": detail}
+        body["detail"] = _first_message(detail)
     else:
         body["detail"] = str(detail)
 

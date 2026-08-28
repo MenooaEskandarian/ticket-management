@@ -2,6 +2,7 @@ from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 
+from .filters import OrderFilter
 from .models import Order
 from .serializers import OrderDetailSerializer, OrderListSerializer
 
@@ -10,7 +11,7 @@ from .serializers import OrderDetailSerializer, OrderListSerializer
 class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     """A customer sees their own orders; support agents see every order."""
 
-    filterset_fields = ["status"]
+    filterset_class = OrderFilter
     ordering_fields = ["placed_at", "total_amount", "status"]
     ordering = ["-placed_at"]
     search_fields = ["number"]

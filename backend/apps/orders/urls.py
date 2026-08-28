@@ -2,7 +2,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import OrderViewSet
 
-router = DefaultRouter()
-router.register("", OrderViewSet, basename="order")
+router = DefaultRouter(trailing_slash=False)
+router.register("orders", OrderViewSet, basename="order")
 
 urlpatterns = router.urls
