@@ -7,6 +7,7 @@ import OrdersPage from "@/features/orders/OrdersPage";
 import OrderDetailPage from "@/features/orders/OrderDetailPage";
 import TicketsPage from "@/features/tickets/TicketsPage";
 import NewTicketPage from "@/features/tickets/NewTicketPage";
+import TicketDetailPage from "@/features/tickets/TicketDetailPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
           { path: "orders/:id", element: <OrderDetailPage /> },
           { path: "tickets", element: <TicketsPage /> },
           { path: "tickets/new", element: <NewTicketPage /> },
+          { path: "tickets/:id", element: <TicketDetailPage /> },
           {
             element: <RequireSupport />,
             children: [{ path: "support", element: <div /> }],
