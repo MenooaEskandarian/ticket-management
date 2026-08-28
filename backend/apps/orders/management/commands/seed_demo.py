@@ -233,7 +233,9 @@ class Command(BaseCommand):
                     "description": description,
                 },
             )
-            if created or not product.image:
+            # Check storage, not just the field: a database restored alongside an
+            # empty media volume still has paths pointing at files that are gone.
+            if created or not product.image or not product.image.storage.exists(product.image.name):
                 product.image.save(
                     f"{product.slug}.jpg", make_product_image(*palette, seed=index), save=True
                 )

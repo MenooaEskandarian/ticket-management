@@ -29,6 +29,9 @@ node_modules/
 .coverage
 htmlcov/
 
+# Docker
+.env.docker
+
 # Editors / OS
 .vscode/
 .idea/
