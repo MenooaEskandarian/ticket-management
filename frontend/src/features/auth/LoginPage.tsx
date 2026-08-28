@@ -46,7 +46,7 @@ export default function LoginPage() {
     }
   }
 
-  function useDemoAccount(email: string) {
+  function fillDemoAccount(email: string) {
     form.setValue("email", email);
     form.setValue("password", "golgift1234");
   }
@@ -125,7 +125,7 @@ export default function LoginPage() {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={() => useDemoAccount(account.email)}
+                  onClick={() => fillDemoAccount(account.email)}
                 >
                   {account.label}
                 </Button>
