@@ -1,0 +1,44 @@
+[project]
+name = "golgift-backend"
+version = "1.0.0"
+description = "Support ticketing API for the GolGift flower shop"
+requires-python = ">=3.14"
+
+dependencies = [
+    "Django==6.1",
+    "djangorestframework==3.18.0",
+    "djangorestframework-simplejwt==5.5.1",
+    "django-filter==26.1",
+    "django-cors-headers==4.9.0",
+    "drf-spectacular==0.30.0",
+    "psycopg[binary]==3.3.4",
+    "Pillow==12.3.0",
+    "python-dotenv==1.2.3",
+    "gunicorn==26.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-django==4.14.0",
+    "factory_boy==3.3.3",
+    "ruff==0.16.5",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.local"
+python_files = ["test_*.py"]
+testpaths = ["apps"]
+addopts = "--reuse-db --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+exclude = [".venv", "migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "C4"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "common", "config"]
