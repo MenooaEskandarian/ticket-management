@@ -12,6 +12,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.notifications.services import notify_ticket_message
 from apps.orders.models import OrderStatus
 from common.exceptions import ConflictError
 
@@ -123,6 +124,10 @@ def post_message(
         )
 
     ticket.register_message(message)
+
+    # Every message, in either direction, notifies the customer on all channels.
+    notify_ticket_message(message)
+
     return message
 
 

@@ -45,6 +45,7 @@ LOCAL_APPS = [
     "apps.catalog",
     "apps.orders",
     "apps.tickets",
+    "apps.notifications",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -152,6 +153,11 @@ TICKET_SLA_CRITICAL_HOURS = 72
 
 # Writing last_seen on every request would add a write to each API call.
 LAST_SEEN_THROTTLE_SECONDS = 60
+
+NOTIFICATION_CHANNELS = [
+    "apps.notifications.channels.email.EmailChannel",
+    "apps.notifications.channels.sms.SmsChannel",
+]
 
 NOTIFICATIONS_CSV_DIR = BASE_DIR / os.getenv("NOTIFICATIONS_CSV_DIR", "var/notifications")
 
