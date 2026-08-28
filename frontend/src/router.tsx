@@ -8,6 +8,8 @@ import OrderDetailPage from "@/features/orders/OrderDetailPage";
 import TicketsPage from "@/features/tickets/TicketsPage";
 import NewTicketPage from "@/features/tickets/NewTicketPage";
 import TicketDetailPage from "@/features/tickets/TicketDetailPage";
+import AdminTicketsPage from "@/features/admin/AdminTicketsPage";
+import AdminNotificationsPage from "@/features/admin/AdminNotificationsPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -26,7 +28,10 @@ export const router = createBrowserRouter([
           { path: "tickets/:id", element: <TicketDetailPage /> },
           {
             element: <RequireSupport />,
-            children: [{ path: "support", element: <div /> }],
+            children: [
+              { path: "support", element: <AdminTicketsPage /> },
+              { path: "support/notifications", element: <AdminNotificationsPage /> },
+            ],
           },
         ],
       },
