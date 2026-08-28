@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* A florist's palette: warm paper, botanical green, a blush accent. */
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.982 0.007 92);
+  --foreground: oklch(0.26 0.022 155);
+
+  --card: oklch(0.995 0.004 92);
+  --card-foreground: oklch(0.26 0.022 155);
+  --popover: oklch(0.995 0.004 92);
+  --popover-foreground: oklch(0.26 0.022 155);
+
+  --primary: oklch(0.44 0.075 155);
+  --primary-foreground: oklch(0.98 0.012 92);
+
+  --secondary: oklch(0.938 0.018 88);
+  --secondary-foreground: oklch(0.3 0.03 155);
+
+  --muted: oklch(0.955 0.013 90);
+  --muted-foreground: oklch(0.505 0.022 145);
+
+  --accent: oklch(0.885 0.055 15);
+  --accent-foreground: oklch(0.32 0.06 15);
+
+  --destructive: oklch(0.552 0.19 27);
+  --destructive-foreground: oklch(0.985 0.01 92);
+
+  --border: oklch(0.9 0.015 88);
+  --input: oklch(0.9 0.015 88);
+  --ring: oklch(0.44 0.075 155);
+
+  /* Response-age bands in the agent dashboard. */
+  --sla-answered: oklch(0.55 0.11 155);
+  --sla-waiting: oklch(0.6 0.03 240);
+  --sla-warning: oklch(0.72 0.14 75);
+  --sla-critical: oklch(0.56 0.19 27);
+  --sla-answered-soft: oklch(0.94 0.04 155);
+  --sla-waiting-soft: oklch(0.95 0.015 240);
+  --sla-warning-soft: oklch(0.95 0.06 85);
+  --sla-critical-soft: oklch(0.94 0.05 27);
+}
+
+.dark {
+  --background: oklch(0.195 0.018 155);
+  --foreground: oklch(0.94 0.012 90);
+
+  --card: oklch(0.235 0.021 155);
+  --card-foreground: oklch(0.94 0.012 90);
+  --popover: oklch(0.235 0.021 155);
+  --popover-foreground: oklch(0.94 0.012 90);
+
+  --primary: oklch(0.72 0.1 155);
+  --primary-foreground: oklch(0.19 0.02 155);
+
+  --secondary: oklch(0.29 0.022 155);
+  --secondary-foreground: oklch(0.94 0.012 90);
+
+  --muted: oklch(0.275 0.019 155);
+  --muted-foreground: oklch(0.72 0.022 130);
+
+  --accent: oklch(0.44 0.07 15);
+  --accent-foreground: oklch(0.95 0.02 15);
+
+  --destructive: oklch(0.62 0.18 27);
+  --destructive-foreground: oklch(0.98 0.01 92);
+
+  --border: oklch(0.32 0.022 155);
+  --input: oklch(0.32 0.022 155);
+  --ring: oklch(0.72 0.1 155);
+
+  --sla-answered: oklch(0.72 0.12 155);
+  --sla-waiting: oklch(0.72 0.04 240);
+  --sla-warning: oklch(0.78 0.14 75);
+  --sla-critical: oklch(0.68 0.18 27);
+  --sla-answered-soft: oklch(0.3 0.05 155);
+  --sla-waiting-soft: oklch(0.3 0.02 240);
+  --sla-warning-soft: oklch(0.33 0.06 75);
+  --sla-critical-soft: oklch(0.32 0.07 27);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sla-answered: var(--sla-answered);
+  --color-sla-waiting: var(--sla-waiting);
+  --color-sla-warning: var(--sla-warning);
+  --color-sla-critical: var(--sla-critical);
+  --color-sla-answered-soft: var(--sla-answered-soft);
+  --color-sla-waiting-soft: var(--sla-waiting-soft);
+  --color-sla-warning-soft: var(--sla-warning-soft);
+  --color-sla-critical-soft: var(--sla-critical-soft);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, "Times New Roman", serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+}
