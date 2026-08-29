@@ -20,9 +20,26 @@ export const SHIPMENT_REQUEST_TYPES = [
   { value: "OTHER", label: "Something else" },
 ] as const;
 
+const MAX_FILE_MB = Math.round(MAX_FILE_BYTES / (1024 * 1024));
+
+/**
+ * Why a file was turned down, named so the customer knows which one to replace.
+ * The picker uses this for immediate feedback; the schema below stays the
+ * authority, so a file can never slip through by skipping the picker.
+ */
+export function rejectionReason(file: File): string | null {
+  if (file.size > MAX_FILE_BYTES) {
+    return `${file.name} is larger than ${MAX_FILE_MB} MB.`;
+  }
+  if (!(ACCEPTED_TYPES as readonly string[]).includes(file.type)) {
+    return `${file.name} is not a JPEG, PNG or WebP image.`;
+  }
+  return null;
+}
+
 const photo = z
   .instanceof(File)
-  .refine((file) => file.size <= MAX_FILE_BYTES, "Each photo must be 5 MB or smaller.")
+  .refine((file) => file.size <= MAX_FILE_BYTES, `Each photo must be ${MAX_FILE_MB} MB or smaller.`)
   .refine(
     (file) => (ACCEPTED_TYPES as readonly string[]).includes(file.type),
     "Photos must be JPEG, PNG or WebP.",

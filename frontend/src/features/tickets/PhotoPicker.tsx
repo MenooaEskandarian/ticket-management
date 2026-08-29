@@ -1,12 +1,15 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBytes } from "@/lib/format";
-import { ACCEPTED_TYPES, MAX_PHOTOS } from "./schemas";
+import { ACCEPTED_TYPES, MAX_PHOTOS, rejectionReason } from "./schemas";
 
 /**
- * Photo picker for delivery problems. The schema does the validating; this only
- * collects files and shows what has been chosen.
+ * Photo picker for delivery problems.
+ *
+ * Files are checked as they are chosen so an oversized photo is reported at the
+ * moment it is picked, rather than silently sitting in the form until submit.
+ * The schema still validates on submit; this is the faster half of the message.
  */
 export function PhotoPicker({
   value,
@@ -18,10 +21,26 @@ export function PhotoPicker({
   disabled?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const [rejected, setRejected] = useState<string[]>([]);
 
   function addFiles(list: FileList | null) {
     if (!list) return;
-    onChange([...value, ...Array.from(list)].slice(0, MAX_PHOTOS));
+
+    const accepted: File[] = [];
+    const reasons: string[] = [];
+    for (const file of Array.from(list)) {
+      const reason = rejectionReason(file);
+      if (reason) reasons.push(reason);
+      else accepted.push(file);
+    }
+
+    const room = MAX_PHOTOS - value.length;
+    if (accepted.length > room) {
+      reasons.push(`Only ${MAX_PHOTOS} photos can be attached, so some were left out.`);
+    }
+
+    setRejected(reasons);
+    if (accepted.length) onChange([...value, ...accepted].slice(0, MAX_PHOTOS));
     if (input.current) input.current.value = "";
   }
 
@@ -47,6 +66,16 @@ export function PhotoPicker({
         <ImagePlus className="size-4" />
         Add photos
       </Button>
+
+      {rejected.length > 0 && (
+        <ul className="space-y-1" role="alert">
+          {rejected.map((reason) => (
+            <li key={reason} className="text-sm text-destructive">
+              {reason}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {value.length > 0 && (
         <ul className="grid gap-2 sm:grid-cols-2">

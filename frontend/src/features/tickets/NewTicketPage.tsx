@@ -33,6 +33,25 @@ import {
   type TicketFormValues,
 } from "./schemas";
 
+/**
+ * Collect every photo problem worth showing.
+ *
+ * Array-level issues (too few, too many) arrive as a plain `.message`, but a
+ * problem with one file lands under its index instead -- reading only
+ * `.message` there shows nothing, and the form looks like it ignored the click.
+ */
+function photoErrors(error: unknown): string[] {
+  if (!error || typeof error !== "object") return [];
+
+  const own = (error as { message?: string }).message;
+  if (own) return [own];
+
+  return Object.entries(error)
+    .filter(([key]) => /^\d+$/.test(key))
+    .map(([, issue]) => (issue as { message?: string } | undefined)?.message)
+    .filter((message): message is string => Boolean(message));
+}
+
 /** What the customer is told about the form they have been given. */
 const KIND_INTRO = {
   DELIVERY_ISSUE: "This order was delivered, so you can send us photos of the problem.",
@@ -248,9 +267,11 @@ export default function NewTicketPage() {
                     />
                   )}
                 />
-                {errors.photos?.message && (
-                  <p className="text-sm text-destructive">{errors.photos.message}</p>
-                )}
+                {photoErrors(errors.photos).map((problem) => (
+                  <p key={problem} className="text-sm text-destructive">
+                    {problem}
+                  </p>
+                ))}
               </div>
             )}
 

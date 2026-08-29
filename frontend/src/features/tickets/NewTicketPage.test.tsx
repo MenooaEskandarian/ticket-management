@@ -4,9 +4,10 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/server";
-import { makeOrder, paginated, renderWithProviders } from "@/test/utils";
+import { imageFile, makeOrder, paginated, renderWithProviders } from "@/test/utils";
 import type { OrderStatus } from "@/types";
 import NewTicketPage from "./NewTicketPage";
+import { MAX_FILE_BYTES } from "./schemas";
 
 function mockOrder(status: OrderStatus) {
   const order = makeOrder({
@@ -71,6 +72,20 @@ describe("validation", () => {
       expect(screen.getByText(/give your message a short title/i)).toBeInTheDocument();
     });
     expect(screen.getByText(/tell us a little more/i)).toBeInTheDocument();
+  });
+
+  it("explains why an oversized photo was refused rather than doing nothing", async () => {
+    const user = userEvent.setup();
+    renderForOrder("DELIVERED");
+
+    await screen.findByText("Report a problem");
+    await user.upload(
+      screen.getByTestId("photo-input"),
+      imageFile("bouquet.jpg", "image/jpeg", MAX_FILE_BYTES + 1),
+    );
+
+    // The reported bug: the form refused to submit and showed nothing at all.
+    expect(await screen.findByRole("alert")).toHaveTextContent("bouquet.jpg is larger than 5 MB.");
   });
 
   it("requires a photo before a delivery problem can be sent", async () => {
