@@ -14,6 +14,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.notifications.dispatch import queue_ticket_message
 from apps.orders.models import OrderStatus
+from apps.realtime.events import publish_ticket_event
 from common.exceptions import ConflictError
 
 from .models import Attachment, Ticket, TicketKind, TicketMessage, TicketStatus
@@ -90,6 +91,7 @@ def create_ticket(*, order, author, subject: str, body: str, attachments=()) -> 
 
     ticket = Ticket.objects.create(order=order, subject=subject, kind=kind)
     post_message(ticket=ticket, author=author, body=body, attachments=files, _prevalidated=True)
+    publish_ticket_event(ticket, "ticket.opened")
     return ticket
 
 
@@ -128,6 +130,7 @@ def post_message(
     # Every message, in either direction, notifies the customer on all channels.
     # Handed to a worker thread once this transaction commits.
     queue_ticket_message(message)
+    publish_ticket_event(ticket, "message.posted", message_id=message.pk)
 
     return message
 
@@ -173,6 +176,7 @@ def reopen_ticket(ticket, *, now=None) -> Ticket:
     ticket.reopened_at = now or timezone.now()
     ticket.closed_at = None
     ticket.save(update_fields=["status", "reopened_at", "closed_at", "updated_at"])
+    publish_ticket_event(ticket, "ticket.reopened")
     return ticket
 
 
@@ -180,6 +184,7 @@ def close_ticket(ticket) -> Ticket:
     if ticket.is_closed:
         raise ValidationError({"detail": "This ticket is already closed."})
     ticket.close()
+    publish_ticket_event(ticket, "ticket.closed")
     return ticket
 
 

@@ -46,6 +46,7 @@ LOCAL_APPS = [
     "apps.orders",
     "apps.tickets",
     "apps.notifications",
+    "apps.realtime",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -168,6 +169,19 @@ TICKET_SLA_CRITICAL_HOURS = 72
 
 # Writing last_seen on every request would add a write to each API call.
 LAST_SEEN_THROTTLE_SECONDS = 60
+
+# Live updates are fanned out through Redis so an event raised on one worker
+# reaches browsers streaming from any other.
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# EventSource cannot send headers, so it carries a token good only for this long.
+REALTIME_TOKEN_TTL_SECONDS = 60
+
+# How long a stream waits before sending a comment frame to keep itself alive.
+REALTIME_KEEPALIVE_SECONDS = 20
+
+# What the browser is told to wait before reconnecting after a drop.
+REALTIME_RETRY_MS = 3000
 
 # Delivery runs on a small pool of worker threads so the customer's request is
 # not held open while placeholder channels write their records.

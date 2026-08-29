@@ -22,7 +22,10 @@ import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { SlaLevel } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTickets } from "@/features/tickets/api";
+import { useEventStream } from "@/features/realtime/useEventStream";
+import { LiveIndicator } from "@/components/LiveIndicator";
 import { useDebounced } from "./useDebounced";
 
 /** Response age is shown twice: as a badge, and as a tint on the whole row. */
@@ -50,11 +53,16 @@ export default function AdminTicketsPage() {
   const [ordering, setOrdering] = useState("-created_at");
   const debouncedSearch = useDebounced(search);
 
+  const queryClient = useQueryClient();
   const { data: tickets, isLoading } = useTickets({
     delivered_only: deliveredOnly,
     search: debouncedSearch,
     ordering,
   });
+
+  const live = useEventStream("/realtime/queue", () =>
+    queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+  );
 
   function toggleSort(field: string) {
     setOrdering((current) => (current === `-${field}` ? field : `-${field}`));
@@ -74,9 +82,12 @@ export default function AdminTicketsPage() {
         title="Support queue"
         description="Newest first. Rows are tinted by how long a customer has been waiting."
         actions={
-          <Badge variant="secondary" className="text-sm">
-            {waiting} awaiting a reply
-          </Badge>
+          <div className="flex items-center gap-3">
+            <LiveIndicator connected={live} />
+            <Badge variant="secondary" className="text-sm">
+              {waiting} awaiting a reply
+            </Badge>
+          </div>
         }
       />
 

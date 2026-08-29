@@ -12,6 +12,8 @@ import { SlaBadge, TicketKindBadge, TicketStatusBadge } from "@/components/Ticke
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { errorMessage } from "@/lib/api";
 import { useAuth } from "@/features/auth/useAuth";
+import { useEventStream } from "@/features/realtime/useEventStream";
+import { LiveIndicator } from "@/components/LiveIndicator";
 import { MessageThread } from "./MessageThread";
 import { ReplyBox } from "./ReplyBox";
 import { useTicket, useTicketAction } from "./api";
@@ -25,6 +27,12 @@ export default function TicketDetailPage() {
   const { data: ticket, isLoading } = useTicket(ticketId);
   const close = useTicketAction(ticketId ?? 0, "close");
   const reopen = useTicketAction(ticketId ?? 0, "reopen");
+
+  // Refetch rather than merge the event payload, so the fetch path stays the
+  // one place this page gets its data from.
+  const live = useEventStream(ticketId ? `/realtime/tickets/${ticketId}` : null, () =>
+    queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+  );
 
   if (isLoading) return <Skeleton className="h-96 rounded-xl" />;
   if (!ticket) return <p className="text-muted-foreground">That ticket could not be found.</p>;
@@ -56,6 +64,7 @@ export default function TicketDetailPage() {
             <span className="text-sm text-muted-foreground">
               Ticket #{ticket.id} · opened {formatDateTime(ticket.created_at)}
             </span>
+            <LiveIndicator connected={live} />
           </div>
         </div>
 
