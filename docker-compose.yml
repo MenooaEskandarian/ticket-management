@@ -36,7 +36,9 @@ services:
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
-      - notification_csv:/app/var
+      # Bind-mounted rather than a named volume so the placeholder email and SMS
+      # records land in the working copy, where they can actually be read.
+      - ./backend/var:/app/var
     depends_on:
       db:
         condition: service_healthy
@@ -64,4 +66,3 @@ volumes:
   postgres_data:
   static_files:
   media_files:
-  notification_csv:
