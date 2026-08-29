@@ -144,6 +144,21 @@ MAX_ATTACHMENTS_PER_MESSAGE = 5
 ALLOWED_UPLOAD_CONTENT_TYPES = ("image/jpeg", "image/png", "image/webp")
 ALLOWED_UPLOAD_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
 
+# A full set of attachments at the per-file limit, plus room for the form fields
+# around them. Nginx's client_max_body_size is set above this on purpose, so the
+# rejection comes from the application with a readable message rather than from
+# the proxy with an HTML error page.
+MAX_REQUEST_BODY_BYTES = MAX_UPLOAD_SIZE_BYTES * MAX_ATTACHMENTS_PER_MESSAGE + (1024 * 1024)
+
+# Applies to the non-file part of a request; files are governed by the
+# validators above. Set explicitly rather than left at Django's 2.5 MB default.
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_REQUEST_BODY_BYTES
+DATA_UPLOAD_MAX_NUMBER_FILES = MAX_ATTACHMENTS_PER_MESSAGE + 5
+
+# Anything larger than this spools to a temporary file instead of being held in
+# memory. It is a threshold, not a limit.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+
 # A ticket may be reopened only inside this window after the order was delivered.
 TICKET_REOPEN_WINDOW_DAYS = 7
 

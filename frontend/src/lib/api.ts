@@ -81,8 +81,16 @@ api.interceptors.response.use(
 
 /** Pull a readable sentence out of whatever the API returned. */
 export function errorMessage(error: unknown, fallback = "Something went wrong."): string {
-  const payload = (error as AxiosError<ApiError>)?.response?.data;
-  if (!payload) return fallback;
+  const response = (error as AxiosError<ApiError>)?.response;
+
+  // A body rejected by the proxy never reaches the API, so it comes back as an
+  // HTML error page rather than the usual JSON shape.
+  if (response?.status === 413) {
+    return "Those photos are too large to upload together. Remove one and try again.";
+  }
+
+  const payload = response?.data;
+  if (!payload || typeof payload !== "object") return fallback;
   if (payload.detail) return payload.detail;
 
   const first = Object.values(payload.fields ?? {})[0];
