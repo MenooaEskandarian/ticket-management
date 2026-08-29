@@ -169,6 +169,14 @@ TICKET_SLA_CRITICAL_HOURS = 72
 # Writing last_seen on every request would add a write to each API call.
 LAST_SEEN_THROTTLE_SECONDS = 60
 
+# Delivery runs on a small pool of worker threads so the customer's request is
+# not held open while placeholder channels write their records.
+NOTIFICATION_WORKERS = int(os.getenv("NOTIFICATION_WORKERS", "4"))
+
+# Run delivery inline instead of on a worker. Tests turn this on so assertions
+# do not race a background thread.
+NOTIFICATIONS_SYNC = env_bool("NOTIFICATIONS_SYNC", False)
+
 NOTIFICATION_CHANNELS = [
     "apps.notifications.channels.email.EmailChannel",
     "apps.notifications.channels.sms.SmsChannel",

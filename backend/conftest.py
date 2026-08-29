@@ -21,8 +21,13 @@ def image_upload(name="photo.jpg", fmt="JPEG", content_type="image/jpeg", size=(
 
 @pytest.fixture(autouse=True)
 def notification_sink(settings, tmp_path):
-    """Keep every test's CSV output in its own temporary directory."""
+    """Keep every test's CSV output in its own temporary directory.
+
+    Delivery is also forced inline: on a worker thread it would land after the
+    assertions, and outside the test's transaction.
+    """
     settings.NOTIFICATIONS_CSV_DIR = tmp_path / "notifications"
+    settings.NOTIFICATIONS_SYNC = True
     reset_channels()
     yield settings.NOTIFICATIONS_CSV_DIR
     reset_channels()
