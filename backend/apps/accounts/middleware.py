@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from asgiref.sync import iscoroutinefunction, markcoroutinefunction, sync_to_async
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 
@@ -50,5 +51,7 @@ class LastSeenMiddleware:
 
         now = timezone.now()
         if user.last_seen_at is None or now - user.last_seen_at >= self.throttle:
-            type(user).objects.filter(pk=user.pk).update(last_seen_at=now)
+            # Not type(user): session authentication hands over a
+            # SimpleLazyObject, which has no manager of its own.
+            get_user_model().objects.filter(pk=user.pk).update(last_seen_at=now)
             user.last_seen_at = now

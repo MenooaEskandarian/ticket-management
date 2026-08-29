@@ -27,9 +27,7 @@ def test_a_message_is_announced_after_the_transaction_commits(
     assert QUEUE_CHANNEL in channels
 
 
-def test_the_payload_says_what_happened(
-    customer, realtime_bus, django_capture_on_commit_callbacks
-):
+def test_the_payload_says_what_happened(customer, realtime_bus, django_capture_on_commit_callbacks):
     ticket = TicketFactory(order__customer=customer)
 
     with django_capture_on_commit_callbacks(execute=True):
@@ -41,9 +39,7 @@ def test_the_payload_says_what_happened(
     assert payload["message_id"] == message.pk
 
 
-def test_closing_a_ticket_is_announced(
-    customer, realtime_bus, django_capture_on_commit_callbacks
-):
+def test_closing_a_ticket_is_announced(customer, realtime_bus, django_capture_on_commit_callbacks):
     ticket = TicketFactory(order__customer=customer)
 
     with django_capture_on_commit_callbacks(execute=True):
