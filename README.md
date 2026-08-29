@@ -19,6 +19,7 @@ Built for the GolGift full-stack technical assessment.
   - **Anything else** — a plain message to the support team.
 - Follow the conversation, attach more photos, close a ticket, and re-open it within a week of
   delivery.
+- The thread updates itself: a reply from support appears without reloading the page.
 
 **For support agents**
 
@@ -28,6 +29,8 @@ Built for the GolGift full-stack technical assessment.
 - A toggle to show only tickets on delivered orders, plus search across subject, order number and
   customer name.
 - A notification log showing every email and SMS the system produced.
+- The queue updates live as customers write in, so a row's response age and unanswered count move
+  on their own.
 
 ---
 
@@ -48,6 +51,8 @@ Built for the GolGift full-stack technical assessment.
 | Unanswered message counts | Annotated in `apps/tickets/views.py` |
 | Upload size and type limits | `apps/tickets/validators.py` — decoded with Pillow, not trusted by header |
 | Docker Compose behind Nginx | `docker-compose.yml`, `nginx/nginx.conf` |
+| Live updates | `backend/apps/realtime/`, `frontend/src/features/realtime/useEventStream.ts` |
+| Notifications off the request thread | `backend/apps/notifications/dispatch.py` |
 
 ---
 
@@ -79,8 +84,11 @@ WEB_PORT=3000 docker compose up --build
 The database runs in Docker; the API and the front end run on your machine with hot reload.
 
 ```bash
-docker compose up -d db
+docker compose up -d db redis
 ```
+
+Redis is only needed for live updates. Without it the app still works; the pages simply fall back
+to fetching when you navigate.
 
 Backend — Python 3.14:
 
@@ -116,11 +124,34 @@ The login page has buttons that fill these in.
 
 ---
 
+## Where the notification records go
+
+There is no real email or SMS gateway. Every notification writes a log line, a row in the
+database, and a line in a CSV file:
+
+| Running | Path |
+|---|---|
+| Docker Compose | `backend/var/notifications/{email,sms}.csv` — bind-mounted, so it appears in your working copy |
+| Development | the same path, written directly |
+
+Support agents can also read the same records in the app, under **Notifications**.
+
+## Django admin
+
+At **/django-admin/**, signed in as `admin@golgift.test` / `golgift1234`.
+
+Two things it is useful for while reviewing:
+
+- **Deleting a ticket frees its order.** An order carries at most one ticket, so removing the
+  ticket is how you make that order available to open a fresh one against.
+- **Editing an order's status** moves it between the three ticket forms without reseeding, which
+  is the quickest way to see the delivered, shipped and general variants.
+
 ## Tests
 
 ```bash
-cd backend && .venv/bin/python -m pytest      # 49 tests
-cd frontend && npm test                        # 36 tests
+cd backend && .venv/bin/python -m pytest      # 71 tests
+cd frontend && npm test                        # 46 tests
 ```
 
 The backend tests concentrate on the rules that are easy to get wrong: which form each order
@@ -147,6 +178,9 @@ POST /api/tickets                                            # multipart
 POST /api/tickets/{id}/messages                              # multipart
 POST /api/tickets/{id}/reopen POST /api/tickets/{id}/close
 GET  /api/notifications                                      # agents only
+POST /api/realtime/token                                     # short-lived token for EventSource
+GET  /api/realtime/queue                                     # event stream, agents only
+GET  /api/realtime/tickets/{id}                              # event stream for one conversation
 ```
 
 Agents can filter the ticket list with `delivered_only`, `status`, `sla`, `search` and `ordering`.
@@ -164,10 +198,11 @@ backend/
     catalog/         products and categories
     orders/          orders, items, drivers, demo seeding
     tickets/         tickets, messages, attachments, and the rules
-    notifications/   pluggable email and SMS channels
+    notifications/   pluggable email and SMS channels, delivered on worker threads
+    realtime/        redis-backed event streams
 frontend/src/
   components/        layout, badges, shared pieces
-  features/          auth · catalog · orders · tickets · admin
+  features/          auth · catalog · orders · tickets · admin · realtime
   lib/               API client, query client, formatters
 nginx/               reverse proxy configuration
 ```
@@ -179,7 +214,9 @@ be tested on their own and there is one place to look when a rule needs to chang
 
 ## Time spent
 
-**About 1 hour 45 minutes of wall-clock time**, end to end — from reading the brief to this README.
+**About 3 hours of wall-clock time**, end to end — roughly 1 hour 45 minutes for the system
+itself, and a further hour or so for a second pass covering live updates, threaded notifications,
+the Django admin and two bug fixes.
 
 That figure is short because I used AI tooling (Claude) heavily throughout, which is how I
 normally work. I directed the architecture, made the design and trade-off decisions recorded
@@ -207,6 +244,9 @@ was done in.
   directions.
 - **Orders are seeded, not purchased.** There is no cart or checkout — the assessment does not ask
   for one, and orders across all five statuses are what the ticket rules actually need.
+- **Live updates are a convenience, never a dependency.** If Redis is unavailable the app carries
+  on: posting still works, and pages fall back to fetching on navigation. Nothing about
+  correctness depends on an event arriving.
 - **Both roles share one ticket page.** An agent sees the SLA badge and acts on the same view the
   customer uses, rather than maintaining two near-identical screens.
 
@@ -214,10 +254,20 @@ was done in.
 
 ## Trade-offs, and what is left out
 
-- **Notifications are synchronous.** Both channels are called in the request that creates the
-  message. The sinks are local — a log line, a database row and a CSV append — so there is nothing
-  slow to defer. They sit behind `notify_ticket_message`, so moving to Celery or similar means
-  queueing one function rather than restructuring anything.
+- **Notifications run on a thread pool, not a task queue.** Delivery is handed to a small pool of
+  worker threads once the transaction commits, so the customer's request returns without waiting
+  on a channel. A pool is not a queue: work in flight is lost if the process dies, and it does not
+  survive a restart or retry on failure. That is the right trade for placeholder sinks writing to
+  a local file; a real gateway would want Celery or similar, which is the same one function moved
+  behind a broker.
+- **Live updates use server-sent events, not WebSockets.** The traffic is one-way — the server
+  tells the browser something changed and the browser refetches — and SSE reconnects on its own
+  and needs no protocol upgrade. The app is served over ASGI so a held-open stream costs a socket
+  rather than a worker.
+- **Streams authenticate with a separate short-lived token.** `EventSource` cannot send an
+  `Authorization` header, and putting the access token in the query string would write a
+  long-lived credential into every proxy log. The client trades its credentials for a token good
+  for sixty seconds instead.
 - **No real email or SMS gateway.** As the brief allows, each notification writes a log line, a
   `NotificationLog` row, and a row in `backend/var/notifications/{email,sms}.csv`. The agent-facing
   notification log makes the events visible rather than something you take on trust.
@@ -225,8 +275,6 @@ was done in.
   prefer httpOnly refresh cookies, since `localStorage` is readable by any injected script.
 - **Response-age bands are computed on read.** Fine at this scale, and it keeps the value honest.
   A large queue would want them precomputed or indexed.
-- **No live updates.** The dashboard reflects the last fetch; there is no websocket or polling. The
-  brief explicitly rules out push notifications.
 - **Product images are generated at seed time** by a small Pillow routine rather than shipped as
   binary assets, which keeps the repository clean and the seeding self-contained.
 - **Left out deliberately:** cart and checkout, payment, pagination controls in the UI (the API
